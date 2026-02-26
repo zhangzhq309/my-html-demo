@@ -1,0 +1,663 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>煤炭发热量计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#64748b',
+                        success: '#22c55e',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        neutral: '#f1f5f9'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1), 0 4px 15px rgba(0, 0, 0, 0.07);
+            }
+            .calculator-shadow {
+                box-shadow: 
+                    0 10px 25px rgba(0, 0, 0, 0.1),
+                    0 5px 10px rgba(0, 0, 0, 0.05),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+                    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+            }
+            .result-card {
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            }
+            .result-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300;
+            }
+            .btn-hover {
+                @apply hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300;
+            }
+            .form-input {
+                @apply w-full px-3 py-2 text-sm rounded-lg border border-gray-300 input-focus bg-white;
+            }
+            .form-label {
+                @apply block text-xs font-medium text-gray-700 mb-1;
+            }
+            .btn-sm {
+                @apply py-2 px-4 text-sm font-medium rounded-lg btn-hover flex items-center justify-center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 标题区域 -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">葫芦树煤炭比对样预测工具</h1>
+            <p class="text-gray-600"></p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 计算表单卡片 -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-xl p-6 glass-effect">
+
+                    
+                    <form id="calculatorForm" class="space-y-4">
+                        <!-- 煤种选择 -->
+                        <div>
+                            <label for="coalType" class="block text-sm font-medium text-gray-700 mb-2">煤种类型</label>
+                            <div class="flex space-x-2">
+                                <div class="relative flex-1">
+                                    <select id="coalType" class="w-full px-4 py-3 rounded-lg border border-gray-300 input-focus appearance-none bg-white">
+                                        <option value="fuel">燃料煤</option>
+                                        <option value="raw" selected>原料煤</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                        <i class="fa fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                                <button id="techSupport" class="bg-primary text-white py-3 px-4 rounded-lg text-sm font-medium btn-hover flex items-center shadow-md whitespace-nowrap">
+                                    <i class="fa fa-question-circle mr-1"></i>
+                                    技术支持
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 左右两列布局 -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- 全水含量 -->
+                            <div>
+                                <label for="moisture" class="block text-xs font-medium text-gray-700 mb-1">全水含量 (Mt) (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="moisture" step="0.01" min="0" max="100" required="" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 input-focus bg-white pl-2 pr-8" placeholder="0.00">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                        <span class="text-xs text-gray-500">%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 灰分含量 -->
+                            <div>
+                                <label for="ash" class="block text-xs font-medium text-gray-700 mb-1">灰分含量 (Aad) (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="ash" step="0.01" min="0" max="100" required="" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 input-focus bg-white pl-2 pr-8" placeholder="0.00">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                        <span class="text-xs text-gray-500">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发热量测定值 -->
+                        <div>
+                            <label for="measuredValue" class="block text-sm font-medium text-gray-700 mb-2">发热量测定值 (Qnet,ar) (MJ/kg)</label>
+                            <div class="relative">
+                                <input type="number" id="measuredValue" step="0.01" min="0" required="" class="w-full px-4 py-3 rounded-lg border border-gray-300 input-focus" placeholder="请输入发热量测定值">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <span class="text-gray-500">MJ/kg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="flex space-x-3 pt-3">
+                            <button type="submit" class="flex-1 bg-primary text-white py-2 px-4 text-sm font-medium rounded-lg btn-hover flex items-center justify-center">
+                                <i class="fa fa-calculator mr-1"></i>
+                                计算
+                            </button>
+                            <button type="button" id="saveRecord" class="flex-1 bg-success text-white py-2 px-4 text-sm font-medium rounded-lg btn-hover flex items-center justify-center" disabled="">
+                                <i class="fa fa-save mr-1"></i>
+                                保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 结果显示卡片 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl p-5 glass-effect calculator-shadow">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fa fa-line-chart text-primary mr-2"></i>
+                        计算结果
+                    </h2>
+                    
+                    <div id="resultContainer" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- 计算值 -->
+                            <div class="bg-neutral rounded-lg p-3 border-l-4 border-primary result-card">
+                                <h3 class="text-xs font-medium text-gray-500 mb-1">发热量计算值 (Qnet,ar)</h3>
+                                <p class="text-xl font-bold text-gray-800">
+                                    <span id="calculatedValue">0.00</span> MJ/kg
+                                </p>
+                            </div>
+                            
+                            <!-- 差值 -->
+                            <div class="bg-neutral rounded-lg p-3 border-l-4 border-warning result-card">
+                                <h3 class="text-xs font-medium text-gray-500 mb-1">理论与测定差值</h3>
+                                <p class="text-xl font-bold text-gray-800">
+                                    <span id="differenceValue">0.00</span> Kcal/Kg
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- 判断结果 -->
+                        <div class="mb-2">
+                            <div class="bg-neutral rounded-lg p-3 border-l-4 result-card" id="resultStatusBorder">
+                                <div class="flex items-center">
+                                    <div id="resultIcon" class="mr-2 text-xl"></div>
+                                    <div>
+                                        <h3 class="text-xs font-medium text-gray-500 mb-1">判断结果</h3>
+                                        <p class="text-lg font-bold" id="resultStatus">等待计算</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 初始提示 -->
+                    <div id="initialPrompt" class="text-center py-8">
+                        <div class="text-gray-400 text-4xl mb-3">
+                            <i class="fa fa-calculator"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-600 mb-1">准备就绪</h3>
+                        <p class="text-sm text-gray-500">请在左侧输入参数并点击计算按钮</p>
+                    </div>
+                </div>
+                
+                <!-- 历史记录卡片 -->
+                <div class="bg-white rounded-xl p-5 mt-5 glass-effect calculator-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fa fa-history text-primary mr-2"></i>
+                            历史记录
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button id="exportData" class="bg-secondary text-white py-1.5 px-3 rounded-lg text-xs font-medium btn-hover flex items-center">
+                                <i class="fa fa-download mr-1"></i>
+                                导出
+                            </button>
+                            <button id="clearRecords" class="bg-danger text-white py-1.5 px-3 rounded-lg text-xs font-medium btn-hover flex items-center">
+                                <i class="fa fa-trash mr-1"></i>
+                                清空
+                            </button>
+
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">煤种</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">全水(%)</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">灰分(%)</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">测定值</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">计算值</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">差值</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">结果</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- 记录将通过JavaScript动态添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 无记录提示 -->
+                    <div id="noRecords" class="text-center py-8">
+                        <div class="text-gray-400 text-4xl mb-3">
+                            <i class="fa fa-folder-open"></i>
+                        </div>
+                        <p class="text-gray-500">暂无历史记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white rounded-lg shadow-lg p-4 flex items-center max-w-sm">
+            <div id="notificationIcon" class="mr-3 text-xl"></div>
+            <p id="notificationMessage" class="text-gray-800"></p>
+        </div>
+    </div>
+    
+    <!-- 技术支持模态框 -->
+    <div id="supportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="supportModalContent">
+            <div class="text-center">
+                <div class="text-primary text-4xl mb-4">
+                    <i class="fa fa-question-circle"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">技术支持</h3>
+                <p class="text-lg text-gray-700 mb-6">张忠群，TEL：15049860128</p>
+                <button id="closeModal" class="bg-primary text-white py-2 px-6 rounded-lg font-medium btn-hover">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 恐怖警告模态框 -->
+    <div id="warningModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="bg-red-900 rounded-xl p-6 max-w-md w-full mx-4 transform transition-all duration-500 scale-95 opacity-0" id="warningModalContent">
+            <div class="text-center">
+                <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/cb6a3e3356234d149223596323787a55~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260225114218819047BF52E83CC92A61&rrcfp=f06b921b&x-expires=1774582948&x-signature=XyHU9ZgC8OB8Ka0PUGFYqgZ5gHI%3D" 
+                     alt="危险警告" class="w-48 h-48 mx-auto mb-4 animate-pulse">
+                <h3 class="text-2xl font-bold text-red-500 mb-2">结果异常！</h3>
+                <p class="text-lg text-white mb-6">计算结果与测定值差异过大，请检查输入参数！</p>
+                <button id="closeWarningModal" class="bg-red-600 text-white py-3 px-8 rounded-lg font-medium btn-hover text-lg">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentResult = null;
+        let records = JSON.parse(localStorage.getItem('coalCalculatorRecords')) || [];
+        
+        // DOM 元素
+        const calculatorForm = document.getElementById('calculatorForm');
+        const saveRecordBtn = document.getElementById('saveRecord');
+        const resultContainer = document.getElementById('resultContainer');
+        const initialPrompt = document.getElementById('initialPrompt');
+        const recordsTableBody = document.getElementById('recordsTableBody');
+        const noRecords = document.getElementById('noRecords');
+        const exportDataBtn = document.getElementById('exportData');
+        const clearRecordsBtn = document.getElementById('clearRecords');
+        const techSupportBtn = document.getElementById('techSupport');
+        const notification = document.getElementById('notification');
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', () => {
+            updateRecordsTable();
+        });
+        
+        // 计算表单提交事件
+        calculatorForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // 获取输入值
+            const coalType = document.getElementById('coalType').value;
+            const moisture = parseFloat(document.getElementById('moisture').value);
+            const ash = parseFloat(document.getElementById('ash').value);
+            const measuredValue = parseFloat(document.getElementById('measuredValue').value);
+            
+            // 计算发热量
+            let calculatedValue;
+            if (coalType === 'fuel') {
+                calculatedValue = -0.29786 * ash - 0.24977 * moisture + 31.24794;
+            } else {
+                calculatedValue = -0.31772 * ash - 0.31996 * moisture + 32.56139;
+            }
+            
+            // 计算差值
+            const difference = Math.round(1000 * (measuredValue - calculatedValue) / 4.1816 * 100) / 100;
+            
+            // 判断结果
+            const isNormal = Math.abs(calculatedValue - measuredValue) < 0.25;
+            const resultStatus = isNormal ? '正常' : '结果异常';
+            
+            // 保存当前结果
+            currentResult = {
+                coalType,
+                moisture,
+                ash,
+                measuredValue,
+                calculatedValue: Math.round(calculatedValue * 100) / 100,
+                difference,
+                resultStatus,
+                timestamp: new Date().toISOString()
+            };
+            
+            // 更新UI显示结果
+            updateResultDisplay(currentResult);
+            
+            // 启用保存按钮
+            saveRecordBtn.disabled = false;
+            saveRecordBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // 显示通知
+            showNotification('计算完成', 'success');
+        });
+        
+        // 保存记录按钮点击事件
+        saveRecordBtn.addEventListener('click', () => {
+            if (currentResult) {
+                // 添加到记录数组
+                records.unshift({
+                    ...currentResult,
+                    id: Date.now().toString(),
+                    saveTime: new Date().toLocaleString('zh-CN')
+                });
+                
+                // 保存到本地存储
+                localStorage.setItem('coalCalculatorRecords', JSON.stringify(records));
+                
+                // 更新记录表格
+                updateRecordsTable();
+                
+                // 显示通知
+                showNotification('记录已保存', 'success');
+            }
+        });
+        
+        // 导出数据按钮点击事件
+        exportDataBtn.addEventListener('click', () => {
+            if (records.length === 0) {
+                showNotification('没有可导出的记录', 'warning');
+                return;
+            }
+            
+            // 创建CSV内容
+            let csvContent = "序号,煤种,全水(%),灰分(%),测定值(MJ/kg),计算值(MJ/kg),差值(Kcal/Kg),结果,时间\n";
+            
+            records.forEach((record, index) => {
+                const coalTypeName = record.coalType === 'fuel' ? '燃料煤' : '原料煤';
+                const row = [
+                    index + 1,
+                    coalTypeName,
+                    record.moisture,
+                    record.ash,
+                    record.measuredValue,
+                    record.calculatedValue,
+                    record.difference,
+                    record.resultStatus,
+                    new Date(record.timestamp).toLocaleString('zh-CN')
+                ].join(',');
+                
+                csvContent += row + "\n";
+            });
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `煤炭发热量记录_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 显示通知
+            showNotification('数据导出成功', 'success');
+        });
+        
+        // 清空记录按钮点击事件
+        clearRecordsBtn.addEventListener('click', () => {
+            if (records.length === 0) {
+                showNotification('没有可清空的记录', 'warning');
+                return;
+            }
+            
+            if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+                records = [];
+                localStorage.removeItem('coalCalculatorRecords');
+                updateRecordsTable();
+                showNotification('历史记录已清空', 'success');
+            }
+        });
+        
+        // 技术支持按钮点击事件
+        techSupportBtn.addEventListener('click', () => {
+            showSupportModal();
+        });
+        
+        // 显示技术支持模态框
+        function showSupportModal() {
+            const modal = document.getElementById('supportModal');
+            const modalContent = document.getElementById('supportModalContent');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            // 点击确定按钮关闭模态框
+            document.getElementById('closeModal').onclick = () => {
+                hideSupportModal();
+            };
+            
+            // 点击模态框外部关闭
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    hideSupportModal();
+                }
+            };
+        }
+        
+        // 隐藏技术支持模态框
+        function hideSupportModal() {
+            const modal = document.getElementById('supportModal');
+            const modalContent = document.getElementById('supportModalContent');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+        
+        // 更新结果显示
+        function updateResultDisplay(result) {
+            // 显示结果容器，隐藏初始提示
+            resultContainer.classList.remove('hidden');
+            initialPrompt.classList.add('hidden');
+            
+            // 更新计算值
+            document.getElementById('calculatedValue').textContent = result.calculatedValue.toFixed(2);
+            
+            // 更新差值
+            document.getElementById('differenceValue').textContent = result.difference.toFixed(2);
+            
+            // 更新判断结果
+            const resultStatusBorder = document.getElementById('resultStatusBorder');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultStatus = document.getElementById('resultStatus');
+            
+            if (result.resultStatus === '正常') {
+                resultStatusBorder.classList.remove('border-danger');
+                resultStatusBorder.classList.add('border-success');
+                resultIcon.className = 'fa fa-check-circle text-success';
+                resultStatus.textContent = '正常';
+                resultStatus.className = 'text-lg font-bold text-success';
+            } else {
+                resultStatusBorder.classList.remove('border-success');
+                resultStatusBorder.classList.add('border-danger');
+                resultIcon.className = 'fa fa-exclamation-circle text-danger';
+                resultStatus.textContent = '结果异常';
+                resultStatus.className = 'text-lg font-bold text-danger';
+                
+                // 显示恐怖警告模态框
+                setTimeout(() => {
+                    showWarningModal();
+                }, 500);
+            }
+        }
+        
+        // 显示恐怖警告模态框
+        function showWarningModal() {
+            const modal = document.getElementById('warningModal');
+            const modalContent = document.getElementById('warningModalContent');
+            
+            // 添加音效（如果需要）
+            // const audio = new Audio('warning-sound.mp3');
+            // audio.play();
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            // 点击确定按钮关闭模态框
+            document.getElementById('closeWarningModal').onclick = () => {
+                hideWarningModal();
+            };
+            
+            // 点击模态框外部关闭
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    hideWarningModal();
+                }
+            };
+        }
+        
+        // 隐藏恐怖警告模态框
+        function hideWarningModal() {
+            const modal = document.getElementById('warningModal');
+            const modalContent = document.getElementById('warningModalContent');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+        
+        // 更新记录表格
+        function updateRecordsTable() {
+            // 清空表格
+            recordsTableBody.innerHTML = '';
+            
+            // 显示或隐藏无记录提示
+            if (records.length === 0) {
+                noRecords.classList.remove('hidden');
+            } else {
+                noRecords.classList.add('hidden');
+                
+                // 添加记录到表格
+                records.forEach((record, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // 设置行的HTML内容
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            ${record.coalType === 'fuel' ? '燃料煤' : '原料煤'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.moisture.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.ash.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.measuredValue.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.calculatedValue.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.difference.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                record.resultStatus === '正常' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                            }">
+                                ${record.resultStatus}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${record.saveTime || new Date(record.timestamp).toLocaleString('zh-CN')}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button class="text-red-500 hover:text-red-700 delete-record" data-id="${record.id}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    // 添加到表格
+                    recordsTableBody.appendChild(row);
+                });
+                
+                // 添加删除记录事件监听
+                document.querySelectorAll('.delete-record').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const recordId = e.currentTarget.getAttribute('data-id');
+                        deleteRecord(recordId);
+                    });
+                });
+            }
+        }
+        
+        // 删除记录
+        function deleteRecord(recordId) {
+            if (confirm('确定要删除这条记录吗？')) {
+                records = records.filter(record => record.id !== recordId);
+                localStorage.setItem('coalCalculatorRecords', JSON.stringify(records));
+                updateRecordsTable();
+                showNotification('记录已删除', 'success');
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notificationIcon = document.getElementById('notificationIcon');
+            const notificationMessage = document.getElementById('notificationMessage');
+            
+            // 设置通知内容
+            notificationMessage.textContent = message;
+            
+            // 设置通知图标和颜色
+            if (type === 'success') {
+                notificationIcon.className = 'fa fa-check-circle text-success';
+            } else if (type === 'error') {
+                notificationIcon.className = 'fa fa-exclamation-circle text-danger';
+            } else if (type === 'warning') {
+                notificationIcon.className = 'fa fa-exclamation-triangle text-warning';
+            } else {
+                notificationIcon.className = 'fa fa-info-circle text-primary';
+            }
+            
+            // 显示通知
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+
+</body></html>
